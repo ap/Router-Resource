@@ -50,7 +50,7 @@ sub match {
         my $code = $route->{meths}{$meth} or next;
         return sub { $code->( $env, $match ) };
     }
-    return undef;
+    return;
 }
 
 1;
@@ -63,23 +63,22 @@ Router::Resource - Build REST-inspired routing tables
 =head1 Synopsis
 
   use Router::Resource;
-  use My::Controller;
   use Plack::Builder;
   use namespace::autoclean;
 
+  # Create a routing table.
   my $router = router {
       resource '/' => sub {
-          GET  { My::Controller->root(@_) };
+          GET  { $template->render('home') };
       };
 
       resource '/blog/{year}/{month}' => sub {
-          GET    { My::Controller->show_post(@_)   };
-          POST   { My::Controller->create_post(@_) };
-          PUT    { My::Controller->update_post(@_) };
-          DELETE { My::Controller->delete_post(@_) };
+          GET  { [200, [], [ $template->render({ posts => \@posts }) ] };
+          POST { push @posts, new_post(shift); [200, [], ['ok']] };
       };
   };
 
+  # Build the Plack app to use it.
   sub app {
       builder {
           sub {
