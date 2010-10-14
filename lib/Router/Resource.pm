@@ -4,25 +4,21 @@ use strict;
 use 5.8.1;
 use parent 'Router::Simple';
 use Sub::Exporter -setup => {
-    exports => [ qw(resource GET POST PUT DELETE HEAD OPTIONS), router => \&_router ],
+    exports => [ qw(router resource GET POST PUT DELETE HEAD OPTIONS)],
     groups  => { default => [ qw(resource router GET POST PUT DELETE HEAD OPTIONS) ] }
 };
 
 our $VERSION = '0.10';
 
-sub _router {
-    sub {
-        my $class = shift;
-        no strict 'refs';
-        no warnings 'once';
-        ${"$class\::ROUTER"} ||= __PACKAGE__->new;
-    };
+our (%METHS, $ROUTER);
+
+sub router(&) {
+    local $ROUTER = __PACKAGE__->new;
+    shift->();
+    return $ROUTER;
 }
 
-our (%METHS);
-
 sub resource ($&) {
-    my $caller = caller;
     my ($path, $code) = @_;
     local %METHS = ();
     $code->();
@@ -31,7 +27,7 @@ sub resource ($&) {
     $METHS{HEAD} ||= $METHS{GET};
 
     while (my ($meth, $code) = each %METHS) {
-        $caller->router->connect($path, {code => $code}, {method => $meth });
+        $ROUTER->connect($path, {code => $code}, {method => $meth });
     }
 }
 
@@ -63,35 +59,29 @@ Router::Resource - REST-inspired routers on Router::Simple
 
 =head1 Synopsis
 
-First, define your routes in a module:
-
-  package My::Router;
   use Router::Resource;
   use My::Controller;
-
-  resource '/' => sub {
-      GET  { My::Controller->root(@_) };
-  };
-
-  resource '/blog/{year}/{month}' => sub {
-      GET    { My::Controller->show_post(@_)   };
-      POST   { My::Controller->create_post(@_) };
-      PUT    { My::Controller->update_post(@_) };
-      DELETE { My::Controller->delete_post(@_) };
-  };
-
-Then use those routes in a Plack app:
-
-  package My::App;
-  use My::Router;
   use Plack::Builder;
+  use namespace::autoclean;
+
+  my $router = router {
+      resource '/' => sub {
+          GET  { My::Controller->root(@_) };
+      };
+
+      resource '/blog/{year}/{month}' => sub {
+          GET    { My::Controller->show_post(@_)   };
+          POST   { My::Controller->create_post(@_) };
+          PUT    { My::Controller->update_post(@_) };
+          DELETE { My::Controller->delete_post(@_) };
+      };
+  };
 
   sub app {
-      my $router = My::Router->router;
       builder {
           sub {
               my $env = shift;
-              if (my $method = $class->router->match($env)) {
+              if (my $method = $router->match($env)) {
                   return $method->();
               } else {
                   return [404, [], ['not found']];
@@ -156,7 +146,7 @@ The value returned by C<match()> (and the first value returned by
 C<matchroute()>) on a successful match is a code reference. To execute the
 method, just execute the code reference:
 
-  if (my $method = $class->router->match($env)) {
+  if (my $method = $router->match($env)) {
       return $method->();
   } else {
       return [404, [], ['not found']];
@@ -195,7 +185,7 @@ module's interface.
 =head1 Support
 
 This module is stored in an open L<GitHub
-repository|http://github.com/theory/router-resource/tree/>. Feel free to fork and
+repository|http://github.com/theory/router-resource/>. Feel free to fork and
 contribute!
 
 Please file bug reports via L<GitHub

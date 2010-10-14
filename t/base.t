@@ -1,61 +1,55 @@
 #!/usr/bin/env perl -w
 
-package My::Router;
-
 use strict;
 use warnings;
 use Router::Resource;
-use Test::More;
+use Test::More tests => 45;
+
+can_ok 'Router::Resource', qw(resource GET HEAD POST PUT DELETE OPTIONS match routematch);
 
 my $reqmeth = 'GET';
 
-resource '/' => sub {
-    GET {
-        is_deeply shift, { REQUEST_METHOD => $reqmeth, PATH_INFO => '/' },
-            'Method first arg should be request env';
-        is_deeply shift, {},
-            'Method second arg should be the route hash';
-        return 'get /'
-    };
-    PUT { 'put /' };
-};
-
-resource '/wiki/:page' => sub {
-    GET {
-        is_deeply shift, { REQUEST_METHOD => 'GET', PATH_INFO => '/wiki/Theory' },
-            'Method first arg should be request env';
-        is_deeply shift, { page => 'Theory' },
-            'Method second arg should be the route hash';
-        return 'get /wiki/:page'
+ok my $router = router {
+    resource '/' => sub {
+        GET {
+            is_deeply shift, { REQUEST_METHOD => $reqmeth, PATH_INFO => '/' },
+                'Method first arg should be request env';
+            is_deeply shift, {},
+                'Method second arg should be the route hash';
+            return 'get /'
+        };
+        PUT { 'put /' };
     };
 
-    POST {
-        is_deeply shift, { REQUEST_METHOD => 'POST', PATH_INFO => '/wiki/Theory' },
-            'Method first arg should be request env';
-        is_deeply shift, { page => 'Theory' },
-            'Method second arg should be the route hash';
-        return 'post /wiki/:page'
+    resource '/wiki/:page' => sub {
+        GET {
+            is_deeply shift, { REQUEST_METHOD => 'GET', PATH_INFO => '/wiki/Theory' },
+                'Method first arg should be request env';
+            is_deeply shift, { page => 'Theory' },
+                'Method second arg should be the route hash';
+            return 'get /wiki/:page'
+        };
+
+        POST {
+            is_deeply shift, { REQUEST_METHOD => 'POST', PATH_INFO => '/wiki/Theory' },
+                'Method first arg should be request env';
+            is_deeply shift, { page => 'Theory' },
+                'Method second arg should be the route hash';
+            return 'post /wiki/:page'
+        };
     };
 
+    resource '/foo' => sub {
+        GET     { 'get /foo'     };
+        HEAD    { 'head /foo'    };
+        POST    { 'post /foo'    };
+        PUT     { 'put /foo'     };
+        DELETE  { 'remove /foo'  };
+        OPTIONS { 'options /foo' };
+        GET     { 'get /foo'     };
+    };
 };
 
-resource '/foo' => sub {
-    GET     { 'get /foo'     };
-    HEAD    { 'head /foo'    };
-    POST    { 'post /foo'    };
-    PUT     { 'put /foo'     };
-    DELETE  { 'remove /foo'  };
-    OPTIONS { 'options /foo' };
-    GET     { 'get /foo'     };
-};
-
-package main;
-use Test::More tests => 46;
-
-can_ok 'Router::Resource', qw(resource GET HEAD POST PUT DELETE OPTIONS match routematch);
-can_ok 'My::Router', qw(router);
-
-ok my $router = My::Router->router, 'Get my router';
 isa_ok $router, 'Router::Resource', 'it';
 isa_ok $router, 'Router::Simple', 'it';
 
