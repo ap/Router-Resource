@@ -2,13 +2,15 @@ package Router::Resource;
 
 use strict;
 use 5.8.1;
-use parent 'Router::Simple';
+use Router::Simple::Route;
 use Sub::Exporter -setup => {
     exports => [ qw(router resource GET POST PUT DELETE HEAD OPTIONS)],
     groups  => { default => [ qw(resource router GET POST PUT DELETE HEAD OPTIONS) ] }
 };
 
 our $VERSION = '0.10';
+
+sub new { bless { routes => [] } };
 
 our (%METHS, $ROUTER);
 
@@ -26,9 +28,9 @@ sub resource ($&) {
     # Let HEAD use GET if not specified.
     $METHS{HEAD} ||= $METHS{GET};
 
-    while (my ($meth, $code) = each %METHS) {
-        $ROUTER->connect($path, {code => $code}, {method => $meth });
-    }
+    # Add the route.
+    push @{ $ROUTER->{routes} }, Router::Simple::Route->new($path, {});
+    $ROUTER->{routes}[-1]->{meths} = { %METHS }; # HACK!
 }
 
 sub GET(&)     { $METHS{GET}     = shift };
@@ -39,15 +41,16 @@ sub DELETE(&)  { $METHS{DELETE}  = shift };
 sub OPTIONS(&) { $METHS{OPTIONS} = shift };
 
 sub match {
-    (shift->routematch(@_))[0]
-}
+    my ($self, $env) = @_;
 
-sub routematch {
-    my ($self, $req) = @_;
-    my ($match, $route) = $self->SUPER::routematch($req);
-    return unless $match;
-    my $code = delete $match->{code};
-    sub { $code->( $req, $match ) }, $route;
+    my $meth = uc($env->{REQUEST_METHOD} || '') or return;
+
+    for my $route (@{ $self->{routes} }) {
+        my $match = $route->match($env) or next;
+        my $code = $route->{meths}{$meth} or next;
+        return sub { $code->( $env, $match ) };
+    }
+    return undef;
 }
 
 1;
@@ -55,7 +58,7 @@ __END__
 
 =head1 Name
 
-Router::Resource - REST-inspired routers on Router::Simple
+Router::Resource - Build REST-inspired routing tables
 
 =head1 Synopsis
 
@@ -100,9 +103,9 @@ declare resources and then the HTTP methods that are implemented for those
 resources.
 
 The paths are subject to the variable treatments offered by L<Router::Simple>,
-which C<Router::Resource> subclasses. Check out its useful L<routing
-rules|Router::Simple/HOW TO WRITE A ROUTING RULE> for flexible declaration of
-resource paths.
+which is used internally by C<Router::Resource> do do the actual work of
+matching routes. Check out its useful L<routing rules|Router::Simple/HOW TO
+WRITE A ROUTING RULE> for flexible declaration of resource paths.
 
 =head2 Resource Methods
 
@@ -142,9 +145,8 @@ Wiki app you might do something like this:
 
 =head2 Matches
 
-The value returned by C<match()> (and the first value returned by
-C<matchroute()>) on a successful match is a code reference. To execute the
-method, just execute the code reference:
+The value returned by C<match()> on a successful match is a code reference. To
+execute the method, just execute the code reference:
 
   if (my $method = $router->match($env)) {
       return $method->();
@@ -167,8 +169,8 @@ documentation for the cool path syntax.
 
 =item *
 
-L<Router::Simple::Sinatraish> was an inspiration for this module I even stole
-some of its code.
+L<Router::Simple::Sinatraish> was an inspiration for this module. It's nice,
+though perhaps a bit too magical.
 
 =item *
 

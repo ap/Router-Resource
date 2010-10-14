@@ -3,9 +3,9 @@
 use strict;
 use warnings;
 use Router::Resource;
-use Test::More tests => 45;
+use Test::More tests => 44;
 
-can_ok 'Router::Resource', qw(resource GET HEAD POST PUT DELETE OPTIONS match routematch);
+can_ok 'Router::Resource', qw(resource GET HEAD POST PUT DELETE OPTIONS match);
 
 my $reqmeth = 'GET';
 
@@ -51,7 +51,6 @@ ok my $router = router {
 };
 
 isa_ok $router, 'Router::Resource', 'it';
-isa_ok $router, 'Router::Simple', 'it';
 
 ok my $meth = $router->match({
     REQUEST_METHOD => "GET",
@@ -79,7 +78,8 @@ isa_ok $meth, 'CODE', 'Route should be a code ref';
 is $meth->(), 'get /', 'And it should be the correct code ref';
 
 # Try a non-match.
-is $router->match('/foo'), undef, 'Not found request should not match';
+is $router->match({PATH_INFO => '/foo'}), undef,
+    'Not found request should not match';
 
 # Now try with Router::Simple stuff.
 ok $meth = $router->match({
