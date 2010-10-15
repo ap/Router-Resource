@@ -3,9 +3,25 @@
 use strict;
 use warnings;
 use Router::Resource;
-use Test::More tests => 44;
+use Test::More tests => 64;
+#use Test::More 'no_plan';
 
-can_ok 'Router::Resource', qw(resource GET HEAD POST PUT DELETE OPTIONS match);
+can_ok 'Router::Resource', qw(
+    new
+    router
+    resource
+    missing
+    dispatch
+    match
+    GET
+    HEAD
+    POST
+    PUT
+    DELETE
+    OPTIONS
+    TRACE
+    CONNECT
+);
 
 my $reqmeth = 'GET';
 
@@ -44,76 +60,136 @@ ok my $router = router {
         HEAD    { 'head /foo'    };
         POST    { 'post /foo'    };
         PUT     { 'put /foo'     };
-        DELETE  { 'remove /foo'  };
+        DELETE  { 'delete /foo'  };
         OPTIONS { 'options /foo' };
         GET     { 'get /foo'     };
+        TRACE   { 'trace /foo'   };
+        CONNECT { 'connect /foo' };
     };
 };
 
 isa_ok $router, 'Router::Resource', 'it';
 
-ok my $meth = $router->match({
+ok my $res = $router->dispatch({
     REQUEST_METHOD => "GET",
     PATH_INFO => "/",
-}), 'Should match GET /';
+}), 'Should dispatch GET /';
 
-isa_ok $meth, 'CODE', 'Route should be a code ref';
-is $meth->(), 'get /', 'And it should be the correct code ref';
+is $res, 'get /', 'And it should be the correct code ref';
 
-ok $meth = $router->match({
+ok my $match = $router->match({
     REQUEST_METHOD => "GET",
     PATH_INFO => "/",
-}), 'Should match GET / again';
+}), 'Should Match GET /';
 
-isa_ok $meth, 'CODE', 'Route should again be a code ref';
-is $meth->(), 'get /', 'And it should still be the correct code ref';
+isa_ok $match, 'HASH', 'Should get a hash ref from match()';
+is $match->{code}, 200, 'Code should be 200';
+isa_ok $match->{meth}, 'CODE', 'The method';
+is_deeply $match->{data}, {}, 'Data should be a hash ref';
+is $match->{meth}->({REQUEST_METHOD => 'GET', PATH_INFO => '/'}, {}),
+    'get /', 'The method code ref should be right';
 
 $reqmeth = 'HEAD';
-ok $meth = $router->match({
+ok $res = $router->dispatch({
     REQUEST_METHOD => "HEAD",
     PATH_INFO => "/",
-}), 'Should match HEAD /';
+}), 'Should dispatch HEAD /';
 
-isa_ok $meth, 'CODE', 'Route should be a code ref';
-is $meth->(), 'get /', 'And it should be the correct code ref';
+is $res, 'get /', 'And it should be the correct result';
 
 # Try a non-match.
-is $router->match({PATH_INFO => '/foo'}), undef,
-    'Not found request should not match';
+ok $res = $router->dispatch({
+    PATH_INFO => '/nonesuch',
+    REQUEST_METHOD => 'GET',
+}), 'Dispatch unknown path';
+is_deeply $res, [404, [], ['not found']], 'Should get default 404 response';
+
+ok $match = $router->match({
+    PATH_INFO => '/nonesuch',
+    REQUEST_METHOD => 'GET',
+}), 'Match unknown path';
+is_deeply $match, { code => 404, message => 'not found', headers => [] },
+    'Should get 404 response match data';
+
+# Try a missing method.
+ok $res = $router->dispatch({
+    PATH_INFO => '/',
+    REQUEST_METHOD => 'POST',
+}), 'Dispatch to resource without method';
+is_deeply $res, [405, [[Allow => 'GET, HEAD, PUT']], ['not allowed']],
+    'Should get default 405 response';
+
+ok $match = $router->match({
+    PATH_INFO => '/',
+    REQUEST_METHOD => 'POST',
+}), 'Match resource without method';
+is_deeply $match, { code => 405, message => 'not allowed', headers => [
+    [ Allow => 'GET, HEAD, PUT' ]
+] }, 'Should get 404 response match data';
 
 # Now try with Router::Simple stuff.
-ok $meth = $router->match({
+ok $res = $router->dispatch({
     REQUEST_METHOD => "GET",
     PATH_INFO => "/wiki/Theory",
-}), 'Should match GET /wiki/Theory';
-
-isa_ok $meth, 'CODE', 'Route should be a code ref';
-is $meth->(), 'get /wiki/:page', 'And it should be the correct code ref';
+}), 'Should dispatch GET /wiki/Theory';
+is $res, 'get /wiki/:page', 'And it should be the correct response';
 
 # Try a POST method.
-ok $meth = $router->match({
+ok $res = $router->dispatch({
     REQUEST_METHOD => "POST",
     PATH_INFO => "/wiki/Theory",
-}), 'Should match POST /wiki/Theory';
+}), 'Should dispatch POST /wiki/Theory';
 
-isa_ok $meth, 'CODE', 'Route should be a code ref';
-is $meth->(), 'post /wiki/:page', 'And it should be the correct code ref';
+is $res, 'post /wiki/:page', 'And it should be the correct response';
 
-# Try a POST method.
-is $router->match({
+# Try a nonexistent method method.
+ok $res = $router->dispatch({
     REQUEST_METHOD => "PUT",
     PATH_INFO => "/wiki/Theory",
-}), undef, 'Should not match PUT /wiki/Theory';
+}), 'Should dispatch PUT /wiki/Theory';
+is_deeply $res, [405, [[Allow => 'GET, HEAD, POST']], ['not allowed']],
+    'Should get default 405 response';
 
 # Make sure that all the methods work.
-for my $meth (qw(get head post put remove options get)) {
-    ok my $match = $router->match({
-        REQUEST_METHOD => $meth eq 'remove' ? 'DELETE' : uc $meth,
+for my $meth (qw(get head post put delete options trace connect)) {
+    ok my $res = $router->dispatch({
+        REQUEST_METHOD => uc $meth,
         PATH_INFO => '/foo'
     }), "Send request for $meth /foo";
-    is $match->(), "$meth /foo", 'And it should return the expected value';
+    is $res, "$meth /foo", 'And it should return the expected response';
 }
 
-use Class::MOP;
-my $meta = Class::MOP::Class->initialize('My::Router');
-diag for $meta->get_method_list;
+# Try the missing() method.
+$reqmeth = 'GET';
+my $reqpath = '/ick';
+my $match = { code => 404, message => 'not found', headers => [] };
+ok $router = router {
+    resource '/' => sub {
+        GET { 'hi there' };
+    };
+    missing {
+        is_deeply shift, {REQUEST_METHOD => $reqmeth, PATH_INFO => $reqpath },
+            'The first arg to missing should be the environment';
+        is_deeply shift, $match,
+            'The second arg to missing should be the match hash';
+        'missing'
+    };
+}, 'Create a new router with a missing method';
+
+ok $res = $router->dispatch({ REQUEST_METHOD => 'GET', PATH_INFO => '/' }),
+    'Dispatch GET /';
+is $res, 'hi there', 'It should have been found';
+
+# Try an invalid path.
+ok $res = $router->dispatch({ REQUEST_METHOD => $reqmeth, PATH_INFO => $reqpath }),
+    'Dispatch GET /ick';
+is $res, 'missing', 'It should have executed the missing method';
+
+# Try a valid path but missing method.
+$reqmeth = 'PUT';
+$reqpath = '/';
+$match = { code => 405, message => 'not allowed', headers => [[Allow => 'GET, HEAD']] };
+ok $res = $router->dispatch({ REQUEST_METHOD => $reqmeth, PATH_INFO => $reqpath }),
+    'Dispatch GET / with missing method';
+is $res, 'missing', 'It, too, shoudl have executed the missing method';
+

@@ -4,8 +4,8 @@ use strict;
 use 5.8.1;
 use Router::Simple::Route;
 use Sub::Exporter -setup => {
-    exports => [ qw(router resource GET POST PUT DELETE HEAD OPTIONS)],
-    groups  => { default => [ qw(resource router GET POST PUT DELETE HEAD OPTIONS) ] }
+    exports => [ qw(router resource missing GET POST PUT DELETE HEAD OPTIONS TRACE CONNECT)],
+    groups  => { default => [ qw(resource router missing GET POST PUT DELETE HEAD OPTIONS TRACE CONNECT) ] }
 };
 
 our $VERSION = '0.10';
@@ -33,24 +33,42 @@ sub resource ($&) {
     $ROUTER->{routes}[-1]->{meths} = { %METHS }; # HACK!
 }
 
-sub GET(&)     { $METHS{GET}     = shift };
-sub HEAD(&)    { $METHS{HEAD}    = shift };
-sub POST(&)    { $METHS{POST}    = shift };
-sub PUT(&)     { $METHS{PUT}     = shift };
-sub DELETE(&)  { $METHS{DELETE}  = shift };
-sub OPTIONS(&) { $METHS{OPTIONS} = shift };
+sub missing(&) { $ROUTER->{missing} = shift }
+sub GET(&)     { $METHS{GET}     = shift }
+sub HEAD(&)    { $METHS{HEAD}    = shift }
+sub POST(&)    { $METHS{POST}    = shift }
+sub PUT(&)     { $METHS{PUT}     = shift }
+sub DELETE(&)  { $METHS{DELETE}  = shift }
+sub OPTIONS(&) { $METHS{OPTIONS} = shift }
+sub TRACE(&)   { $METHS{TRACE}   = shift }
+sub CONNECT(&) { $METHS{CONNECT} = shift }
+
+sub dispatch {
+    my ($self, $env) = @_;
+    my $match = $self->match($env);
+    if (my $meth = $match->{meth}) {
+        return $meth->($env, $match->{data});
+    }
+    my $missing = $self->{missing} or return [
+        $match->{code}, $match->{headers}, [$match->{message}]
+    ];
+    return $missing->($env, $match);
+}
 
 sub match {
     my ($self, $env) = @_;
-
     my $meth = uc($env->{REQUEST_METHOD} || '') or return;
 
     for my $route (@{ $self->{routes} }) {
         my $match = $route->match($env) or next;
-        my $code = $route->{meths}{$meth} or next;
-        return sub { $code->( $env, $match ) };
+        my $code = $route->{meths}{$meth} or return {
+            code    => 405,
+            message => 'not allowed',
+            headers => [[Allow => join ', ', sort keys %{ $route->{meths} } ]],
+        };
+        return { meth => $code, code => 200, data => $match };
     }
-    return;
+    return { code => 404, message => 'not found', headers => [] };
 }
 
 1;
@@ -81,14 +99,7 @@ Router::Resource - Build REST-inspired routing tables
   # Build the Plack app to use it.
   sub app {
       builder {
-          sub {
-              my $env = shift;
-              if (my $method = $router->match($env)) {
-                  return $method->();
-              } else {
-                  return [404, [], ['not found']];
-              }
-          };
+          sub { $router->dispatch(shift) };
       };
   }
 
@@ -106,10 +117,19 @@ which is used internally by C<Router::Resource> do do the actual work of
 matching routes. Check out its useful L<routing rules|Router::Simple/HOW TO
 WRITE A ROUTING RULE> for flexible declaration of resource paths.
 
-=head2 Resource Methods
+=head2 Interface
 
-The HTTP methods supported for a resource are defined by the following HTTP
-methods:
+You create a router in a C<router> block. Within that block, define resources
+understood by the router with the C<resource> keyword, which takes a resource
+path and a block defining its interface:
+
+  my $router = {
+      resource '/'    => sub { [[200, [], ['ok']] };
+      resource '/foo' => sub { [[200, [], ['ok']] };
+  };
+
+Within a resource block, declare the HTTP methods that the resource responds
+to by using one or more of the following keywords:
 
 =over
 
@@ -125,37 +145,141 @@ methods:
 
 =item C<OPTIONS>
 
+=item C<TRACE>
+
+=item C<CONNECT>
+
 =back
 
 When you define these methods, they should expect to take two arguments: the
-matched request (a Plack C<$env> hash or simply a URI path) and a hash of the
-matched data as created by Router::Simple. For example, in a L<Plack>-powered
-Wiki app you might do something like this:
+matched request (generally a L<PSGI> C<$env> hash) and a hash of the matched
+data as created by Router::Simple. For example, in a L<Plack>-powered Wiki app
+you might do something like this:
 
-  resource '/wiki/:name' => sub {
+  resource '/wiki/{name}' => sub {
       GET {
-          my $req = Plack::Request->new(shift);
+          my $req    = Plack::Request->new(shift);
           my $params = shift;
-          my $wiki = Wiki->lookup( $parmas->{name} );
-          return [200, [], [$wiki]];
-
+          my $wiki   = Wiki->lookup( $parmas->{name} );
+          my $res    = $req->new_response;
+          $res->content_type('text/html; charset=UTF-8');
+          $res->body($wiki);
+          return $res->finalize;
       };
   };
 
+But of course you can abstract that into a controller or other code that the
+HTTP method simply dispatches to.
+
+=head2 Dispatching
+
+The simplest way to use a Router::Resrouce object is via the C<dispatch>
+method. For a Plack app, it looks something like this:
+
+  sub { $router->dispatch(shift) };
+
+The assumption is that the methods you've defined will return a
+L<PSGI>-compatible array reference. When the router finds no matching resource
+or method, such an array is precisely what it will return. When a resource
+cannot be found, it will return
+
+  [404, [], ['not found']]
+
+If the resource is found but the requested method is not defined, it returns
+something like:
+
+  [405, [[Allow => 'GET, HEAD']], ['not allowed']]
+
+The "Allow" header will list the methods that the requested resource I<does>
+respond to.
+
+Of course you may not want something so simple for your app. So use the
+C<missing> keyword to specify a code block to handle this situation. The code
+block should expect two arguments: the unmatched request C<$env> hash and a
+hash describing the failure. For an unfound resource, that hash will contain:
+
+  { code => 404, message => 'not found', headers => [] }
+
+If a resource was found but it does not define the requested method, the hash
+will look something like this:
+
+  { code => 405, message => 'not allowed', headers => [[Allow => 'GET, HEAD']] }
+
+This is designed to make it relatively easy to create a custom response to
+unfound resources and missing methods. Something like:
+
+  missing {
+      my $req    = Plack::Request->new(shift);
+      my $params = shift;
+      my $res    = $req->new_response($params->{code});
+      $res->content_type('text/html; charset=UTF-8');
+      $res->body($template->show('not_found', $params));
+      return $res->finalize;
+  };
+
+=begin private
+
+XXX Document C<match> or not?
+
 =head2 Matches
 
-The value returned by C<match()> on a successful match is a code reference. To
-execute the method, just execute the code reference:
+The C<distpatch> method relies on the C<match> method to find the requested
+resources and the methods to execute. If you find that C<dispatch> isn't quite
+what you need, you can use C<match> and do the work yourself. The C<match>
+method returns a hash describing the match (or lack of match). The keys that
+may be found in that hash are:
 
-  if (my $method = $router->match($env)) {
-      return $method->();
-  } else {
-      return [404, [], ['not found']];
-  }
+=over
 
-Simple, right? But note that this value is different than that returned by
-L<Router::Simple>'s C<match()> method. That hash is the value passed as the
-second argument to the method.
+=item C<code>
+
+An HTTP status code. Possible values are 200 for a successful match, 404 when
+the resource cannot be found, and 405 when the resource does not support the
+requested method.
+
+=item C<meth>
+
+The code reference that defines the method that was found for the resource.
+Always set when C<code> is 200.
+
+=item C<data>
+
+The data matched by Router::Simple. Undefined unless the C<code> is 200.
+
+=item C<headers>
+
+An array reference of headers to be used in the response. Undefined when
+C<code> is 200, an empty array for 404, and containing the "Allow" header
+for 405.
+
+=back
+
+Use the result hash to determine how to respond. An example:
+
+  sub {
+      my $env = shift;
+      my $match = $router->match($env);
+      if (my $meth = $match->{meth}) {
+          # We have a match!
+          return $meth->($env, $match->{data});
+      }
+
+      if ($match->{code} == 404) {
+          return [404, $match->{headers}, ['Nothing found, look elsewhere']];
+      } else {
+          return [405, $match->{headers}, [
+              "Sorry, but $env->{PATH_INFO}" does't respond to "
+            . "$env->{REQUEST_METHOD}. Try any of these: "
+            . $match->{headers}[0][1]
+          ]];
+      }
+  };
+
+
+Likely you won't need this, though, as C<dispatch> should cover the vast
+majorit of needs.
+
+=end private
 
 =head1 See Also
 
@@ -178,8 +302,8 @@ on top of L<Router::Simple>, which is fully Plack-aware.
 
 =item *
 
-L<Router::Resource|http://wtf> - The Ruby module whose interface inspired this
-module's interface.
+L<Sinatra::Resources|http://github.com/nateware/sinatra-resources> - The Ruby
+module that inspired this module.
 
 =back
 
