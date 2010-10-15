@@ -151,6 +151,9 @@ to by using one or more of the following keywords:
 
 =back
 
+Note that if you define a C<GET> method but not a C<HEAD> method, the C<GET>
+method will respond to C<HEAD> requests.
+
 When you define these methods, they should expect to take two arguments: the
 matched request (generally a L<PSGI> C<$env> hash) and a hash of the matched
 data as created by Router::Simple. For example, in a L<Plack>-powered Wiki app
