@@ -86,20 +86,20 @@ Router::Resource - Build REST-inspired routing tables
   use Plack::Builder;
   use namespace::autoclean;
 
-  # Create a routing table.
-  my $router = router {
-      resource '/' => sub {
-          GET  { $template->render('home') };
-      };
-
-      resource '/blog/{year}/{month}' => sub {
-          GET  { [200, [], [ $template->render({ posts => \@posts }) ] };
-          POST { push @posts, new_post(shift); [200, [], ['ok']] };
-      };
-  };
-
-  # Build the Plack app to use it.
   sub app {
+      # Create a routing table.
+      my $router = router {
+          resource '/' => sub {
+              GET  { $template->render('home') };
+          };
+
+          resource '/blog/{year}/{month}' => sub {
+              GET  { [200, [], [ $template->render({ posts => \@posts }) ] };
+              POST { push @posts, new_post(shift); [200, [], ['ok']] };
+          };
+      };
+
+      # Build the Plack app to use it.
       builder {
           sub { $router->dispatch(shift) };
       };
