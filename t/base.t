@@ -162,7 +162,7 @@ for my $meth (qw(get head post put delete options trace connect)) {
 # Try the missing() method.
 $reqmeth = 'GET';
 my $reqpath = '/ick';
-my $match = { code => 404, message => 'not found', headers => [] };
+$match = { code => 404, message => 'not found', headers => [] };
 ok $router = router {
     resource '/' => sub {
         GET { 'hi there' };
