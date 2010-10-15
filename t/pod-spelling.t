@@ -14,3 +14,17 @@ RESTful
 RESTy
 Wiki
 unfound
+Acknowledgements
+LeoNerd
+Melo
+Miyagawa
+Pearcey
+Ragwitz
+Sinatraish
+Tatsuhiko
+mdule
+melo
+miyagawa
+mst
+rafl
+

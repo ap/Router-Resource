@@ -114,10 +114,9 @@ encourage you to think about it that way, Router::Resource requires that you
 declare resources and then the HTTP methods that are implemented for those
 resources.
 
-The paths are subject to the variable treatments offered by L<Router::Simple>,
-which is used internally by C<Router::Resource> do do the actual work of
-matching routes. Check out its useful L<routing rules|Router::Simple/HOW TO
-WRITE A ROUTING RULE> for flexible declaration of resource paths.
+The rules for matching paths are defined by
+L<Router::Simple's routing rules|Router::Simple/HOW TO WRITE A ROUTING RULE>,
+which offer quite a lot of flexibility.
 
 =head2 Interface
 
@@ -156,10 +155,10 @@ to by using one or more of the following keywords:
 Note that if you define a C<GET> method but not a C<HEAD> method, the C<GET>
 method will respond to C<HEAD> requests.
 
-When you define these methods, they should expect to take two arguments: the
-matched request (generally a L<PSGI> C<$env> hash) and a hash of the matched
-data as created by Router::Simple. For example, in a L<Plack>-powered Wiki app
-you might do something like this:
+These methods should expect two arguments: the matched request (generally a
+L<PSGI> C<$env> hash) and a hash of the matched data as created by
+Router::Simple. For example, in a L<Plack>-powered Wiki app you might do
+something like this:
 
   resource '/wiki/{name}' => sub {
       GET {
@@ -178,14 +177,14 @@ HTTP method simply dispatches to.
 
 =head2 Dispatching
 
-The simplest way to use a Router::Resrouce object is via the C<dispatch>
-method. For a Plack app, it looks something like this:
+Use the C<dispatch> method to have the router dispatch HTTP requests. For a
+ Plack app, it looks something like this:
 
   sub { $router->dispatch(shift) };
 
 The assumption is that the methods you've defined will return a
 L<PSGI>-compatible array reference. When the router finds no matching resource
-or method, such an array is precisely what it will return. When a resource
+or method, such an array is precisely what I<it> will return. When a resource
 cannot be found, it will return
 
   [404, [], ['not found']]
@@ -217,6 +216,7 @@ unfound resources and missing methods. Something like:
       my $req    = Plack::Request->new(shift);
       my $params = shift;
       my $res    = $req->new_response($params->{code});
+      $res->headers($_) for @{ $params->{headers} };
       $res->content_type('text/html; charset=UTF-8');
       $res->body($template->show('not_found', $params));
       return $res->finalize;
@@ -282,7 +282,7 @@ Use the result hash to determine how to respond. An example:
 
 
 Likely you won't need this, though, as C<dispatch> should cover the vast
-majorit of needs.
+majority of needs.
 
 =end private
 
@@ -292,23 +292,23 @@ majorit of needs.
 
 =item *
 
-L<Router::Simple> is the foundation on which this module is built. See its
-documentation for the cool path syntax.
+L<Router::Simple> provides the rule syntax for Router::Resource resource paths.
 
 =item *
 
-L<Router::Simple::Sinatraish> was an inspiration for this module. It's nice,
+L<Router::Simple::Sinatraish> provides a
+L<Sinatraish|http://www.sinatrarb.com/> routing table interface. It's nice,
 though perhaps a bit too magical.
-
-=item *
-
-L<Plack> is B<the> way to write your Perl web apps. Router::Resource is built
-on top of L<Router::Simple>, which is fully Plack-aware.
 
 =item *
 
 L<Sinatra::Resources|http://github.com/nateware/sinatra-resources> - The Ruby
 module that inspired this module.
+
+=item *
+
+L<Plack> is B<the> way to write your Perl web apps. Router::Resource is built
+on top of L<Router::Simple>, which is fully Plack-aware.
 
 =back
 
@@ -325,6 +325,27 @@ L<bug-Router-Resource@rt.cpan.org|mailto:bug-Router-Resource@rt.cpan.org>.
 =head1 Author
 
 David E. Wheeler <david@kineticode.com>
+
+=head1 Acknowledgements
+
+My thanks to the denizens of #plack for their feedback and advice on this module,
+including:
+
+=over
+
+=item * L<Hans Dieter Pearcey (confound)|http://search.cpan.org/~hdp/>
+
+=item * L<Florian Ragwitz (rafl)|http://search.cpan.org/~flora/>
+
+=item * L<Paul Evans (LeoNerd)|http://search.cpan.org/~pevans/>
+
+=item * L<Matt S Trout (mst)|http://search.cpan.org/~mstrout/>
+
+=item * L<Tatsuhiko Miyagawa (miyagawa)|http://search.cpan.org/~miyagawa/>
+
+=item * L<Pedro Melo (melo)|http://search.cpan.org/~melo/>
+
+=back
 
 =head1 Copyright and License
 
