@@ -29,8 +29,9 @@ sub resource ($&) {
     $METHS{HEAD} ||= $METHS{GET};
 
     # Add the route.
-    push @{ $ROUTER->{routes} }, Router::Simple::Route->new($path, {});
-    $ROUTER->{routes}[-1]->{meths} = { %METHS }; # HACK!
+    push @{ $ROUTER->{routes} }, Router::Simple::Route->new(
+        $path, { meths => { %METHS } }
+    );
 }
 
 sub missing(&) { $ROUTER->{missing} = shift }
@@ -61,10 +62,11 @@ sub match {
 
     for my $route (@{ $self->{routes} }) {
         my $match = $route->match($env) or next;
-        my $code = $route->{meths}{$meth} or return {
+        my $meths = delete $match->{meths};
+        my $code = $meths->{$meth} or return {
             code    => 405,
             message => 'not allowed',
-            headers => [[Allow => join ', ', sort keys %{ $route->{meths} } ]],
+            headers => [[Allow => join ', ', sort keys %{ $meths } ]],
         };
         return { meth => $code, code => 200, data => $match };
     }
