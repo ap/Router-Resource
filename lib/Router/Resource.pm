@@ -8,7 +8,7 @@ use Sub::Exporter -setup => {
     groups  => { default => [ qw(resource router missing GET POST PUT DELETE HEAD OPTIONS TRACE CONNECT) ] }
 };
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 sub new { bless { routes => [] } };
 
