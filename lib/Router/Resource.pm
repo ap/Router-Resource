@@ -307,8 +307,8 @@ module that inspired this module.
 
 =item *
 
-L<Plack> is B<the> way to write your Perl web apps. Router::Resource is built
-on top of L<Router::Simple>, which is fully Plack-aware.
+L<Plack> is B<the> way to write your Perl web apps. Router::Resource is fully
+Plack-aware.
 
 =back
 
