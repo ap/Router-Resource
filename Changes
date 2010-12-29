@@ -1,6 +1,10 @@
 Revision history for Perl extension Router::Resource.
 
 0.11
+      - Fixed the headers returned on method lookup failure: they should not
+        have been in a double array ref. So now instead of something like
+        `[[Allow => 'GET, HEAD']]`, the headers are properly set to
+        `[Allow => 'GET, HEAD']`, and therefore parseable by HTTP::Headers.
 
 0.10  2010-10-16T03:08:50
       - Initial version.

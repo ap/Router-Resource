@@ -66,7 +66,7 @@ sub match {
         my $code = $meths->{$meth} or return {
             code    => 405,
             message => 'not allowed',
-            headers => [[Allow => join ', ', sort keys %{ $meths } ]],
+            headers => [Allow => join ', ', sort keys %{ $meths } ],
         };
         return { meth => $code, code => 200, data => $match };
     }
@@ -192,7 +192,7 @@ cannot be found, it will return
 If the resource is found but the requested method is not defined, it returns
 something like:
 
-  [405, [[Allow => 'GET, HEAD']], ['not allowed']]
+  [405, [Allow => 'GET, HEAD'], ['not allowed']]
 
 The "Allow" header will list the methods that the requested resource I<does>
 respond to.
@@ -207,7 +207,7 @@ hash describing the failure. For an unfound resource, that hash will contain:
 If a resource was found but it does not define the requested method, the hash
 will look something like this:
 
-  { code => 405, message => 'not allowed', headers => [[Allow => 'GET, HEAD']] }
+  { code => 405, message => 'not allowed', headers => [Allow => 'GET, HEAD'] }
 
 This is designed to make it relatively easy to create a custom response to
 unfound resources and missing methods. Something like:
@@ -216,7 +216,7 @@ unfound resources and missing methods. Something like:
       my $req    = Plack::Request->new(shift);
       my $params = shift;
       my $res    = $req->new_response($params->{code});
-      $res->headers($_) for @{ $params->{headers} };
+      $res->headers(@{ $params->{headers} });
       $res->content_type('text/html; charset=UTF-8');
       $res->body($template->show('not_found', $params));
       return $res->finalize;

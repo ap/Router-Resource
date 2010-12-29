@@ -116,7 +116,7 @@ ok $res = $router->dispatch({
     PATH_INFO => '/',
     REQUEST_METHOD => 'POST',
 }), 'Dispatch to resource without method';
-is_deeply $res, [405, [[Allow => 'GET, HEAD, PUT']], ['not allowed']],
+is_deeply $res, [405, [Allow => 'GET, HEAD, PUT'], ['not allowed']],
     'Should get default 405 response';
 
 ok $match = $router->match({
@@ -124,7 +124,7 @@ ok $match = $router->match({
     REQUEST_METHOD => 'POST',
 }), 'Match resource without method';
 is_deeply $match, { code => 405, message => 'not allowed', headers => [
-    [ Allow => 'GET, HEAD, PUT' ]
+    Allow => 'GET, HEAD, PUT'
 ] }, 'Should get 404 response match data';
 
 # Now try with Router::Simple stuff.
@@ -147,7 +147,7 @@ ok $res = $router->dispatch({
     REQUEST_METHOD => "PUT",
     PATH_INFO => "/wiki/Theory",
 }), 'Should dispatch PUT /wiki/Theory';
-is_deeply $res, [405, [[Allow => 'GET, HEAD, POST']], ['not allowed']],
+is_deeply $res, [405, [Allow => 'GET, HEAD, POST'], ['not allowed']],
     'Should get default 405 response';
 
 # Make sure that all the methods work.
@@ -188,7 +188,7 @@ is $res, 'missing', 'It should have executed the missing method';
 # Try a valid path but missing method.
 $reqmeth = 'PUT';
 $reqpath = '/';
-$match = { code => 405, message => 'not allowed', headers => [[Allow => 'GET, HEAD']] };
+$match = { code => 405, message => 'not allowed', headers => [Allow => 'GET, HEAD'] };
 ok $res = $router->dispatch({ REQUEST_METHOD => $reqmeth, PATH_INFO => $reqpath }),
     'Dispatch GET / with missing method';
 is $res, 'missing', 'It, too, shoudl have executed the missing method';
