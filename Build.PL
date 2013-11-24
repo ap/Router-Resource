@@ -24,7 +24,7 @@ Module::Build->new(
         resources => {
             homepage   => 'http://search.cpan.org/dist/Router-Resource/',
             bugtracker => 'http://github.com/theory/router-resource/issues/',
-            repository => 'http://github.com/theory/router-resource/tree/',
+            repository => 'http://github.com/theory/router-resource',
         }
     },
 )->create_build_script;
