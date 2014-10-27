@@ -12,7 +12,7 @@ Module::Build->new(
         'Test::More'    => '0.70',
     },
     requires => {
-        'Router::Simple' => '0.07',
+        'Router::Simple' => '0.16',
         'Sub::Exporter'  => 0,
         'perl'           => 5.008001,
     },
