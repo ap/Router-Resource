@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use Router::Resource;
-use Test::More tests => 64;
+use Test::More tests => 96;
 #use Test::More 'no_plan';
 
 can_ok 'Router::Resource', qw(
@@ -65,6 +65,18 @@ ok my $router = router {
         GET     { 'get /foo'     };
         TRACE   { 'trace /foo'   };
         CONNECT { 'connect /foo' };
+    };
+
+    resource '/bar/' => sub {
+        GET     { 'get /bar'     };
+        HEAD    { 'head /bar'    };
+        POST    { 'post /bar'    };
+        PUT     { 'put /bar'     };
+        DELETE  { 'delete /bar'  };
+        OPTIONS { 'options /bar' };
+        GET     { 'get /bar'     };
+        TRACE   { 'trace /bar'   };
+        CONNECT { 'connect /bar' };
     };
 };
 
@@ -157,6 +169,21 @@ for my $meth (qw(get head post put delete options trace connect)) {
         PATH_INFO => '/foo'
     }), "Send request for $meth /foo";
     is $res, "$meth /foo", 'And it should return the expected response';
+}
+
+# Make sure that the ending slash is working
+for my $meth (qw(get head post put delete options trace connect)) {
+    ok my $res = $router->dispatch({
+        REQUEST_METHOD => uc $meth,
+        PATH_INFO => '/bar/'
+    }), "Send request for $meth /bar/";
+    is $res, "$meth /bar", 'And it should return the expected response';
+
+    ok $res = $router->dispatch({
+        REQUEST_METHOD => uc $meth,
+        PATH_INFO => '/bar'
+    }), "Send request for $meth /bar";
+    is $res, "$meth /bar", 'And it should return the expected response';
 }
 
 # Try the missing() method.

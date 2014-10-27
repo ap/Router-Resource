@@ -30,7 +30,7 @@ sub resource ($&) {
 
     # Add the route.
     push @{ $ROUTER->{routes} }, Router::Simple::Route->new(
-        $path, { meths => { %METHS } }
+        $path, { meths => { %METHS } }, { directory_slash => 1 }
     );
 }
 
