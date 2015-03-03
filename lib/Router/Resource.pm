@@ -10,13 +10,17 @@ use Sub::Exporter -setup => {
 
 our $VERSION = '0.12';
 
-sub new { bless { routes => [] } };
+sub new {
+    my ($class, %settings) = @_;
+    bless { routes => [], settings => \%settings };
+}
 
 our (%METHS, $ROUTER);
 
-sub router(&) {
-    local $ROUTER = __PACKAGE__->new;
-    shift->();
+sub router(&;@) {
+    my ($block, @settings) = @_;
+    local $ROUTER = __PACKAGE__->new(@settings);
+    $block->();
     return $ROUTER;
 }
 
@@ -27,7 +31,14 @@ sub resource ($&) {
 
     # Let HEAD use GET if not specified.
     $METHS{HEAD} ||= $METHS{GET};
-
+    # Add auto OPTIONS if enabled
+    if (!$METHS{OPTIONS} && $ROUTER->{settings}{auto_options}) {
+        my $methods = join(', ' => 'OPTIONS', keys %METHS);
+        $METHS{OPTIONS} = sub {
+            [200, ['Allow', $methods], []]
+        };
+    }
+    
     # Add the route.
     push @{ $ROUTER->{routes} }, Router::Simple::Route->new(
         $path, { meths => { %METHS } }
@@ -174,6 +185,20 @@ something like this:
 
 But of course you can abstract that into a controller or other code that the
 HTTP method simply dispatches to.
+
+If you wish the router to create an OPTIONS handler for you, by looking at the
+methods defined for a resource, you can pass the C<auto_options> setting to
+C<router>:
+
+    $router = router {
+        resource '/blog/{year}/{month}' => sub {
+            GET  { [200, [], [ $template->render({ posts => \@posts }) ] };
+            POST { push @posts, new_post(shift); [200, [], ['ok']] };
+        };
+    } auto_options => 1;
+
+At this point, $router's OPTIONS method would return that GET, HEAD, and OPTIONS
+are valid for C</blog/{year}/{month}>.
 
 =head2 Dispatching
 

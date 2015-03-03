@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use Router::Resource;
-use Test::More tests => 64;
+use Test::More tests => 70;
 #use Test::More 'no_plan';
 
 can_ok 'Router::Resource', qw(
@@ -193,3 +193,20 @@ ok $res = $router->dispatch({ REQUEST_METHOD => $reqmeth, PATH_INFO => $reqpath 
     'Dispatch GET / with missing method';
 is $res, 'missing', 'It, too, shoudl have executed the missing method';
 
+# Try the auto_options setting.
+$reqmeth = 'GET';
+$match = { code => 200, message => '', headers => ['Allow', 'OPTIONS, GET'] };
+$router = router {
+    resource '/' => sub {
+        GET { 'hi there' };
+    };
+   
+} auto_options => 1;
+ok $router, 'router created with auto_options';
+
+ok $res = $router->dispatch({ REQUEST_METHOD => 'OPTIONS', PATH_INFO => '/' }),
+    'Dispatch OPTIONS /';
+is $res->[1][0], 'Allow', 'Allow exists';
+like $res->[1][1], qr/OPTIONS/, 'and is set correctly';
+like $res->[1][1], qr/GET/, 'and is set correctly';
+like $res->[1][1], qr/HEAD/, 'and is set correctly';
