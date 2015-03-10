@@ -1,6 +1,6 @@
 Revision history for Perl extension Router::Resource.
 
-0.20
+0.20  2015-03-10T17:33:08Z
       - Added the `auto_options` option, which will auto-generate an `OPTIONS`
         method for each resource. Thanks to Chris Reinhardt for the pull
         request!
