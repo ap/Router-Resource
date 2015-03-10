@@ -30,3 +30,5 @@
 
 # Avoid Pod tests.
 t/pod[^.]*\.t
+^MYMETA\.yml$
+^MYMETA\.json$
