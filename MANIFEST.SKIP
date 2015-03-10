@@ -28,6 +28,5 @@
 # Avoid build files.
 ^Router-Resource
 
-# Avoid spelling test.
-pod-spelling.t$
-^MYMETA.yml$
+# Avoid Pod tests.
+t/pod[^.]*\.t
