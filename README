@@ -1,4 +1,4 @@
-Router/Resource version 0.20
+Router/Resource version 0.21
 ============================
 
 This library's module, Router::Resource, provides an REST-friendly interface for
