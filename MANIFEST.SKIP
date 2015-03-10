@@ -4,6 +4,7 @@
 ,v$
 \B\.svn\b
 \B\.git
+\B\.travis
 
 # Avoid Makemaker generated and utility files.
 \bMakefile$
@@ -12,6 +13,8 @@
 \bpm_to_blib$
 \bblibdirs$
 ^MANIFEST\.SKIP$
+^MYMETA\.yml$
+^MYMETA\.json$
 
 # Avoid Module::Build generated and utility files.
 \bBuild$
@@ -30,5 +33,3 @@
 
 # Avoid Pod tests.
 t/pod[^.]*\.t
-^MYMETA\.yml$
-^MYMETA\.json$
