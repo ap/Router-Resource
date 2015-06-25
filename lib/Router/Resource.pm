@@ -4,8 +4,8 @@ use strict;
 use 5.8.1;
 use Router::Simple::Route;
 use Sub::Exporter -setup => {
-    exports => [ qw(router resource missing GET POST PUT DELETE HEAD OPTIONS TRACE CONNECT)],
-    groups  => { default => [ qw(resource router missing GET POST PUT DELETE HEAD OPTIONS TRACE CONNECT) ] }
+    exports => [ qw(router resource missing GET POST PUT DELETE HEAD OPTIONS TRACE CONNECT PATCH)],
+    groups  => { default => [ qw(resource router missing GET POST PUT DELETE HEAD OPTIONS TRACE CONNECT PATCH) ] }
 };
 
 our $VERSION = '0.21';
@@ -53,6 +53,7 @@ sub DELETE(&)  { $METHS{DELETE}  = shift }
 sub OPTIONS(&) { $METHS{OPTIONS} = shift }
 sub TRACE(&)   { $METHS{TRACE}   = shift }
 sub CONNECT(&) { $METHS{CONNECT} = shift }
+sub PATCH(&)   { $METHS{PATCH}   = shift }
 
 sub dispatch {
     my ($self, $env) = @_;
@@ -159,6 +160,8 @@ to by using one or more of the following keywords:
 =item C<TRACE>
 
 =item C<CONNECT>
+
+=item C<PATCH>
 
 =back
 

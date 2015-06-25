@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use Router::Resource;
-use Test::More tests => 70;
+use Test::More tests => 72;
 #use Test::More 'no_plan';
 
 can_ok 'Router::Resource', qw(
@@ -21,6 +21,7 @@ can_ok 'Router::Resource', qw(
     OPTIONS
     TRACE
     CONNECT
+    PATCH
 );
 
 my $reqmeth = 'GET';
@@ -65,6 +66,7 @@ ok my $router = router {
         GET     { 'get /foo'     };
         TRACE   { 'trace /foo'   };
         CONNECT { 'connect /foo' };
+        PATCH   { 'patch /foo'   };
     };
 };
 
@@ -151,7 +153,7 @@ is_deeply $res, [405, [Allow => 'GET, HEAD, POST'], ['not allowed']],
     'Should get default 405 response';
 
 # Make sure that all the methods work.
-for my $meth (qw(get head post put delete options trace connect)) {
+for my $meth (qw(get head post put delete options trace connect patch)) {
     ok my $res = $router->dispatch({
         REQUEST_METHOD => uc $meth,
         PATH_INFO => '/foo'
