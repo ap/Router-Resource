@@ -177,7 +177,7 @@ something like this:
       GET {
           my $req    = Plack::Request->new(shift);
           my $params = shift;
-          my $wiki   = Wiki->lookup( $parmas->{name} );
+          my $wiki   = Wiki->lookup( $params->{name} );
           my $res    = $req->new_response;
           $res->content_type('text/html; charset=UTF-8');
           $res->body($wiki);
