@@ -1,6 +1,6 @@
 Revision history for Perl extension Router::Resource.
 
-0.21
+0.21  2015-08-15T01:39:01Z
       - Added the `PATCH` method. Thanks to Chris Reinhardt for the pull
         request!
 
