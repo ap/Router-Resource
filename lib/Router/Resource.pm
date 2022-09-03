@@ -340,16 +340,6 @@ Plack-aware.
 
 =back
 
-=head1 Support
-
-This module is stored in an open L<GitHub
-repository|http://github.com/theory/router-resource/>. Feel free to fork and
-contribute!
-
-Please file bug reports via L<GitHub
-Issues|http://github.com/theory/router-resource/issues/> or by sending mail to
-L<bug-Router-Resource@rt.cpan.org|mailto:bug-Router-Resource@rt.cpan.org>.
-
 =head1 Author
 
 David E. Wheeler <david@kineticode.com>
@@ -361,17 +351,17 @@ including:
 
 =over
 
-=item * L<Hans Dieter Pearcey (confound)|http://search.cpan.org/~hdp/>
+=item * Hans Dieter Pearcey (confound)
 
-=item * L<Florian Ragwitz (rafl)|http://search.cpan.org/~flora/>
+=item * Florian Ragwitz (rafl)
 
-=item * L<Paul Evans (LeoNerd)|http://search.cpan.org/~pevans/>
+=item * Paul Evans (LeoNerd)
 
-=item * L<Matt S Trout (mst)|http://search.cpan.org/~mstrout/>
+=item * Matt S Trout (mst)
 
-=item * L<Tatsuhiko Miyagawa (miyagawa)|http://search.cpan.org/~miyagawa/>
+=item * Tatsuhiko Miyagawa (miyagawa)
 
-=item * L<Pedro Melo (melo)|http://search.cpan.org/~melo/>
+=item * Pedro Melo (melo)
 
 =back
 
