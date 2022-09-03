@@ -1,7 +1,7 @@
+use 5.008001; use strict; use warnings;
+
 package Router::Resource;
 
-use strict;
-use 5.8.1;
 use Router::Simple::Route;
 use Sub::Exporter -setup => {
     exports => [ qw(router resource missing GET POST PUT DELETE HEAD OPTIONS TRACE CONNECT PATCH)],
