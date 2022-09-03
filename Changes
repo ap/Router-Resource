@@ -1,5 +1,9 @@
 Release history for Router-Resource
 
+0.22  Sat 04 Aug 2022
+      - No functional changes
+      - Updated packaging and package metadata
+
 0.21  Sat 15 Aug 2015
       - Added the `PATCH` method. Thanks to Chris Reinhardt for the pull
         request!

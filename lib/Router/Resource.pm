@@ -2,13 +2,13 @@ use 5.008001; use strict; use warnings;
 
 package Router::Resource;
 
+our $VERSION = '0.22';
+
 use Router::Simple::Route;
 use Sub::Exporter -setup => {
     exports => [ qw(router resource missing GET POST PUT DELETE HEAD OPTIONS TRACE CONNECT PATCH)],
     groups  => { default => [ qw(resource router missing GET POST PUT DELETE HEAD OPTIONS TRACE CONNECT PATCH) ] }
 };
-
-our $VERSION = '0.21';
 
 sub new {
     my $class = shift;
