@@ -1,9 +1,0 @@
-_build
-blib
-Router-Resource-*
-MANIFEST
-MANIFEST.bak
-META.*
-Build
-MYMETA.*
-Makefile*
