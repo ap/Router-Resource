@@ -85,13 +85,18 @@ sub match {
 }
 
 1;
+
 __END__
 
-=head1 Name
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
 
 Router::Resource - Build REST-inspired routing tables
 
-=head1 Synopsis
+=head1 SYNOPSIS
 
   use Router::Resource;
   use Plack::Builder;
@@ -116,7 +121,7 @@ Router::Resource - Build REST-inspired routing tables
       };
   }
 
-=head1 Description
+=head1 DESCRIPTION
 
 There are a bunch of path routers on CPAN, but they tend not to be very RESTy.
 A basic idea of a RESTful API is that URIs point to resources and the standard
@@ -129,7 +134,7 @@ The rules for matching paths are defined by
 L<Router::Simple's routing rules|Router::Simple/HOW TO WRITE A ROUTING RULE>,
 which offer quite a lot of flexibility.
 
-=head2 Interface
+=head1 INTERFACE
 
 You create a router in a C<router> block. Within that block, define resources
 understood by the router with the C<resource> keyword, which takes a resource
@@ -314,7 +319,7 @@ majority of needs.
 
 =end private
 
-=head1 See Also
+=head1 SEE ALSO
 
 =over
 
@@ -340,13 +345,9 @@ Plack-aware.
 
 =back
 
-=head1 Author
+=head1 ACKNOWLEDGEMENTS
 
-David E. Wheeler <david@kineticode.com>
-
-=head1 Acknowledgements
-
-My thanks to the denizens of #plack for their feedback and advice on this module,
+Thanks to the denizens of #plack for their feedback and advice on this module,
 including:
 
 =over
@@ -364,12 +365,5 @@ including:
 =item * Pedro Melo (melo)
 
 =back
-
-=head1 Copyright and License
-
-Copyright (c) 2010-2011 David E. Wheeler. Some Rights Reserved.
-
-This module is free software; you can redistribute it and/or modify it under
-the same terms as Perl itself.
 
 =cut
